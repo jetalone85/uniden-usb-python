@@ -94,6 +94,18 @@ class UnidenUBC125XLT:
         usb.util.dispose_resources(self.device)
         logging.info("Device closed properly.")
 
+    def get_channel_info(self, channel: int) -> str:
+        """
+        Get detailed information about a specified channel.
+
+        Parameters:
+            channel (int): The channel number.
+
+        Returns:
+            str: Channel details.
+        """
+        return self.send_command(f"PM {channel}")
+
 
 if __name__ == "__main__":
     scanner = UnidenUBC125XLT()
@@ -103,9 +115,10 @@ if __name__ == "__main__":
         model = scanner.get_model()
         logging.info(f"Model: {model}")
 
-        channel_number = 1
-        frequency = scanner.get_channel_frequency(channel_number)
-        logging.info(f"Frequency on channel {channel_number}: {frequency}")
+        # Try first 10 channels to find a programmed one
+        for channel_number in range(1, 11):
+            channel_info = scanner.get_channel_info(channel_number)
+            logging.info(f"Channel {channel_number} info: {channel_info}")
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
