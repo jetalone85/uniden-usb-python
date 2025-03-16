@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+"""
+Uniden Frequency Scanner USB Device Detection Module
+
+This module provides a class-based implementation for detecting a connected Uniden
+frequency scanner USB device. Update the vendor and product IDs as necessary.
+All comments and log messages are in English.
+"""
+
 import logging
 import sys
 
@@ -11,36 +20,51 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
-# Update these after identification
-UNIDEN_VENDOR_ID = 0x1965
-UNIDEN_PRODUCT_ID = 0x0018  # sprawdź dokładnie na swoim urządzeniu!
 
+class UnidenDevice:
+    """
+    Class to manage the Uniden frequency scanner USB device.
+    """
+    # Device identifiers (update these values based on your device)
+    VENDOR_ID = 0x1965
+    PRODUCT_ID = 0x0018
 
-def find_uniden_device():
-    logging.info("Searching for Uniden frequency scanner USB device...")
+    def __init__(self) -> None:
+        """
+        Initialize the Uniden device by searching for it on the USB bus.
+        Exits the program if the device is not found.
+        """
+        logging.info("Searching for Uniden frequency scanner USB device...")
+        self.device = usb.core.find(idVendor=self.VENDOR_ID, idProduct=self.PRODUCT_ID)
+        if self.device is None:
+            logging.error("Uniden device not found. Check USB connection and device IDs.")
+            sys.exit(1)
+        logging.info(f"Found Uniden USB device: Vendor ID={hex(self.VENDOR_ID)}, Product ID={hex(self.PRODUCT_ID)}")
 
-    # find device
-    device = usb.core.find(idVendor=UNIDEN_VENDOR_ID, idProduct=UNIDEN_PRODUCT_ID)
-
-    if device is None:
-        logging.error("Uniden device not found. Check USB connection and device IDs.")
-        return None
-
-    logging.info(f"Found Uniden USB device: Vendor ID={hex(UNIDEN_VENDOR_ID)}, Product ID={hex(UNIDEN_PRODUCT_ID)}")
-
-    return device
-
-
-def main():
-    device = find_uniden_device()
-    if device:
+    def initialize(self) -> None:
+        """
+        Perform any additional initialization steps if needed.
+        Currently, it simply logs that the device detection was successful.
+        """
         logging.info("Device detection successful.")
-    else:
-        logging.error("Device detection failed.")
+
+    def close(self) -> None:
+        """
+        Release device resources.
+        """
+        usb.util.dispose_resources(self.device)
+        logging.info("Device resources released.")
+
+
+def main() -> None:
+    """
+    Main function to detect and initialize the Uniden device.
+    """
+    uniden = UnidenDevice()
+    uniden.initialize()
+    # Further operations with uniden.device can be added here.
+    uniden.close()
 
 
 if __name__ == "__main__":
-    # Update these IDs once you've identified them
-    UNIDEN_VENDOR_ID = 0x1965
-    UNIDEN_PRODUCT_ID = 0x0018
-    main_device = find_uniden_device()
+    main()
