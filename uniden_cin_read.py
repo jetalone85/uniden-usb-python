@@ -1,18 +1,10 @@
-#!/usr/bin/env python3
-"""
-Uniden UBC125XLT CIN Channel Read Test
-"""
-
 import logging
 import time
 
 import usb.core
 import usb.util
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
 
 
 class UnidenUBC125XLT:
@@ -33,27 +25,16 @@ class UnidenUBC125XLT:
     def initialize(self):
         if self.device.is_kernel_driver_active(self.INTERFACE):
             self.device.detach_kernel_driver(self.INTERFACE)
-            logging.debug("Detached kernel driver.")
         self.device.set_configuration(self.CONFIGURATION)
         usb.util.claim_interface(self.device, self.INTERFACE)
         logging.info("Device initialized successfully.")
-        self.clear_buffer()
 
-    def clear_buffer(self):
-        logging.info("Clearing device buffer...")
-        try:
-            while True:
-                data = self.device.read(self.ENDPOINT_IN, 128, timeout=500)
-                logging.debug(f"Cleared buffered data: {bytes(data)}")
-        except usb.core.USBError:
-            logging.info("Buffer cleared.")
-
-    def send_command(self, cmd: str):
+    def send_command(self, cmd):
         full_cmd = cmd.strip() + '\r'
         self.device.write(self.ENDPOINT_OUT, full_cmd.encode('ascii'), timeout=self.TIMEOUT)
-        time.sleep(0.2)
+        time.sleep(0.1)
         response = self.device.read(self.ENDPOINT_IN, 128, timeout=self.TIMEOUT)
-        return bytes(response).decode('ascii', errors='replace').strip()
+        return bytes(response).decode('ascii').strip()
 
     def close(self):
         usb.util.release_interface(self.device, self.INTERFACE)
@@ -61,20 +42,14 @@ class UnidenUBC125XLT:
         logging.info("Device closed properly.")
 
 
-def main():
+if __name__ == "__main__":
     scanner = UnidenUBC125XLT()
     try:
         scanner.initialize()
-
-        # Attempt to read configuration of channel 1:
-        response = scanner.send_command("CIN,001")
-        logging.info(f"CIN channel 001 response: '{response}'")
-
-    except Exception as e:
-        logging.error(f"Error: {e}")
+        for cmd in ["CIN", "GLG"]:
+            response = scanner.send_command(cmd)
+            logging.info(f"{cmd} → {response}")
     finally:
-        scanner.close()
-
-
-if __name__ == "__main__":
-    main()
+        usb.util.release_interface(scanner.device, scanner.INTERFACE)
+        usb.util.dispose_resources(scanner.device)
+        logging.info("Device closed properly.")
